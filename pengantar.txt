@@ -1,0 +1,551 @@
+1. create-react-app nama
+2. buat folder backend berinama dan npm init
+3. npm install express cors mongoose dotenv
+4. npm install -g nodemon
+5. buat file server.js isinya 
+
+const express = require('express');
+const cors = require('cors');
+
+require('dotenv').config();
+
+const app = express();
+const port = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+app.listen(port,()=>{
+    console.log(`Server is running on port : ${port}`);
+    
+})
+
+
+6. tambah kan ini di server.js
+app.use(cors());
+app.use(express.json());
+
+//tambahkan disini
+const uri = process.env.ATLAS_URI;
+mongoose.connect(uri, { useNewUrlParser: true, useCreate }
+);
+const connection = mongoose.connection;
+connection.once('open', () => {
+    console.log("Mongo db berhasil terkoneksi");
+
+});
+
+
+7. buat file .env didalam folder backend
+ATLAS_URI =mongodb+srv://Aris:ArisElda21@cluster0-kr2qx.mongodb.net/test?retryWrites=true&w=majority
+
+
+8. buat folder serta file baru didalam backend
+ folder models
+	- exercise.model.js
+	- user.model.js
+  folder routes
+	- exercise.js
+	- users.js
+
+9. tambahkan ini didalm server.js diatas app.listen(port.....
+	const exercisesRouter = require('./routes/exercise');
+const usersRouter = require('./routes/users');
+
+app.use('/exercise',exercisesRouter);
+app.use('/users',usersRouter);
+
+10. tambahkan ini pada server.js
+    useUnifiedTopology: true,
+    useNewUrlParser: true,}
+
+
+11. pada 
+ folder user
+	- exercise.js
+	- user.js
+ ----exercise.js code ------
+const router = require('express').Router();
+let Exercise = require('../models/exercise.model');
+
+router.route('/').get((req,res)=>{
+    Exercise.find()
+    .then(exercises=>res.json(exercises))
+    .catch(err=>res.status(400).json('Error:'+err));
+});
+
+router.route('/add').post((req,res)=>{
+    const username= req.body.username;
+    const description= req.body.description;
+    const duration= Number(req.body.duration);
+    const date= Date.parse(req.body.date);
+
+    const newExercise = new Exercise({
+        username,
+        description,
+        duration,
+        date,
+    });
+
+    newExercise.save()
+    .then(()=>res.json('data latihan berhasil di tambahkan '))
+    .catch(err=>res.status(400).json('error: '+err));
+
+});
+
+module.exports = router;
+
+ ----user.js code ------
+const router = require('express').Router();
+let User = require('../models/user.model');
+
+router.route('/').get((req,res)=>{
+    User.find()
+    .then(users=>res.json(users))
+    .catch(err=>res.status(400).json('Error:'+err));
+});
+
+router.route('/add').post((req,res)=>{
+    const username= req.body.username;
+
+    const newUser = new User({username});
+
+    newUser.save()
+    .then(()=>res.json('User berhasil di tambahkan'))
+    .catch(err=>res.status(400).json('Error '+err))
+});
+
+module.exports = router;
+
+
+12. pada 
+ folder models 
+	- exercise.models.js
+	- user.models.js
+
+
+--------- - exercise.models.js -------
+const mongoose = require('mongoose');
+
+const Schema = mongoose.Schema;
+
+const exerciseSchema = new Schema({
+    username: {type:String,required:true},
+    description: {type:String,required:true},
+    duration: {type:Number,required:true},
+    date: {type:Date,required:true},
+},{
+    timestamps:true,
+});
+
+const Exercise = mongoose.model('Exercise',exerciseSchema);
+module.exports = Exercise;
+
+
+--------- - user.models.js -------
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const userSchema = new Schema({
+    username:{
+        type:String,
+        required:true,
+        unique:true,
+        trim:true,
+        minLength:3
+    },
+},{
+    timestamps:true,
+});
+const User = mongoose.model('User',userSchema);
+module.exports = User;
+
+
+
+
+
+15. lengkapi router 2 lain pada exercise .js
+
+
+
+//router findById
+router.route('/:id').get((req, res) => {
+    Exercise.findById(req.params.id)
+        .then(exercise => res.json(exercise))
+        .catch(err => res.status(400).json('Error ' + err))
+});
+
+//router add 
+router.route('/add').post((req, res) => {
+    const username = req.body.username;
+    const description = req.body.description;
+    const duration = Number(req.body.duration);
+    const date = Date.parse(req.body.date);
+
+    const newExercise = new Exercise({
+        username,
+        description,
+        duration,
+        date,
+    });
+    newExercise.save()
+        .then(() => res.json('data latihan berhasil di tambahkan '))
+        .catch(err => res.status(400).json('error: ' + err));
+
+    //router delete
+    router.route('/:id').delete((req, res) => {
+        Exercise.findByIdAndDelete(req.params.id)
+            .then(() => res.json('Exercise deleted.'))
+            .catch(err => res.status(400).json('Error : ' + err));
+    });
+
+    //routerr update
+    router.route('/update/:id').post((req, res) => {
+        Exercise.findById(req.params.id)
+            .then(exercise => {
+                exercise.username = req.body.username;
+                exercise.description = req.body.description;
+                exercise.duration = Number(req.body.duration);
+                exercise.date = Date.parse(req.body.date);
+
+                exercise.save()
+                    .then(() => res.json('Exercise updated !!'))
+                    .catch(err => res.status(400).json('Error: ' + err));
+            })
+            .catch(err => res.status(400).json('error: ' + err));
+    })
+
+
+
+
+16. Pada react install berikut
+npm install bootstrap
+npm install  react-router-dom
+
+
+17 pada app.js di front-end ubah menjadi
+import React from 'react';
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css"
+
+import Navbar from "./components/navbar.component";
+import ExerciseList from "./components/exercise-list.component";
+import EditExercise from "./components/edit-exercise.component";
+import CreateExercise from "./components/create-exercise.component";
+import CreateUser from "./components/create-user.component";
+
+function App() {
+  return (
+    <Router>
+      <Navbar/>
+      <br/>
+      <Route path="/" exact component={ExerciseList}/>
+      <Route path="/edit/:id" exact component={EditExercise}/>
+      <Route path="/create" exact component={CreateExercise}/>
+      <Route path="/user" exact component={CreateUser}/>
+    </Router>
+
+  );
+}
+
+export default App;
+
+
+18 pada index.js ubah menjadi
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+
+ReactDOM.render(<App /> ,document.getElementById('root')
+);
+
+
+19 nah setelah itu buat file2 dalam folder berikut ini :
+    folder components
+	-create-exercise-component.js
+	-create-user.component.js
+	-edit-exercise.component.js
+	-exercise-list.component.js
+	-navbar-component.js
+
+
+20.  App.js menjadi
+import React from 'react';
+import { BrowserRouter as Router, Route } from "react-router-dom";
+import "bootstrap/dist/css/bootstrap.min.css"
+
+import Navbar from "./components/navbar.component";
+import ExerciseList from "./components/exercise-list.component";
+import EditExercise from "./components/edit-exercise.component";
+import CreateExercise from "./components/create-exercise.component";
+import CreateUser from "./components/create-user.component";
+
+function App() {
+  return (
+    <Router>
+      <Navbar/>
+      <br/>
+      <Route path="/" exact component={ExerciseList}/>
+      <Route path="/edit/:id" exact component={EditExercise}/>
+      <Route path="/create" exact component={CreateExercise}/>
+      <Route path="/user" exact component={CreateUser}/>
+    </Router>
+
+  );
+}
+
+export default App;
+
+
+21 setelah itu isi masing 2 halaman dan sesuaikan dengan namanya dirubah saja ok
+pada 
+++++++++++++++++++++++++++++++++
+Navbar.js
++++++++++++++++++++++++++++++++
+
+import React,{Component} from'react';
+import {Link} from 'react-router-dom';
+
+export default class Navbar extends Component{
+    render(){
+        return(
+            <nav className="navbar navbar-dark bg-dark navbar-expand-lg">
+                <Link to="/" className="navbar-brand">ExerTracker</Link>
+                <div className="collapse navbar-collapse">
+                    <ul className="navbar-nav mr-auto">
+                        <li className="'navbar-item">
+                        <Link to="/" className="nav-link">Latihan</Link>
+                        </li>
+                        <li className="navbar-item">
+                            <Link to ="/create" className="nav-link">Buat Latihan</Link>
+                        </li>
+                        <li className="nvabr-item">
+                            <Link to="/user" className="nav-link">Create User</Link>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        )
+    }
+}
+
++++++++++++++++++++
+create exercise.js
++++++++++++++++++++
+
+import React, { Component } from 'react'
+
+export default class CreateExercise extends Component {
+    render() {
+        return (
+            <div>
+                <p>you are on create exercise  compoennt</p>
+            </div>
+        )
+    }
+}
+
+
+22 Pada exercise create  isi file menjadi seperti ini :
+import React, { Component } from 'react'
+
+export default class CreateExercise extends Component {
+    constructor(props) {
+        super(props)
+
+        this.onChangeUsername = this.onChangeUsername.bind(this);
+        this.onChangeDescription = this.onChangeDescription.bind(this);
+        this.onChangeDuration = this.onChangeDuration.bind(this);
+        this.onChangeDate = this.onChangeDate.bind(this);
+        this.onSubmit= this.onSubmit.bind(this);
+
+        this.state = {
+            username :'',
+            description: '',
+            duration: 0,
+            date: new Date(),
+            users: []
+        }
+    }
+
+    componentDidMount(){
+        
+    }
+
+    onChangeUsername(e) {
+        this.setState({
+            username: e.target.value
+        });
+    }
+
+    onChangeDescription(e) {
+        this.setState({
+            description: e.target.value
+        });
+    }
+
+    onChangeDuration(e) {
+        this.setState({
+            duration: e.target.value
+        });
+    }
+
+    onChangeDate(date) {
+        this.setState({
+            date: date
+        });
+    }
+
+    onSubmit(e) {
+        e.preventDefault();
+
+        const exercise ={
+            username:this.state.username,
+            description:this.state.description,
+            duration:this.state.duration,
+            duration:this.state.date
+        }
+        console.log(exercise);
+        
+        window.location='/';
+    }
+
+    render() {
+        return (
+            <div>
+                <p>you are on create exercise  compoennt</p>
+            </div>
+        )
+    }
+}
+
+23 pada create exercise tambahkan
+
+  <div>
+                <h3>Create new Exercise log</h3>
+                <form onSubmit ={this.onSubmit}>
+                    <div className="form-group">
+                        <label>Username : </label>
+                        <select 
+                        ref="userInput"
+                        required
+                        className="form-control"
+                        value={this.state.username}
+                        onChange={this.onChangeUsername}
+                        >
+                            {
+                                this.state.users.map(function(user){
+                                    return <option
+                                       key={user}
+                                        value={user}>
+                                        {user}
+                                    </option>
+                                })
+                            }
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label>Description : </label>
+                        <input 
+                        type="text"
+                        required
+                        className="form-control"
+                        value={this.state.description}
+                        onChange={this.onChangeDescription}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Duration (in Munutes):  </label>
+                        <input 
+                        type="text"
+                        required
+                        className="form-control"
+                        value={this.state.duration}
+                        onChange={this.onChangeDuration}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Date : </label>
+                        <DatePicker
+                            selected={this.state.date}
+                            onChange={this.onChangeDate}
+                        />
+                    </div>
+                </form>
+                <p>you are on create exercise  compoennt</p>
+            </div>
+
+
+24 dan install npm install react-datepicker
+    serta tambahkan 
+import DatePicker from 'react-datepicker'
+import "react-datepicker/dist/react-datepicker.css"
+
+25 pada create user element tambahkan
+import React, { Component } from 'react'
+
+export default class CreateUser extends Component {
+
+    constructor(props) {
+        super(props)
+
+        this.onChangeUsername = this.onChangeUsername.bind(this);
+        this.onSubmit= this.onSubmit.bind(this);
+
+        this.state = {
+            username :'',
+        }
+    }
+
+    onChangeUsername(e) {
+        this.setState({
+            username: e.target.value
+        });
+    }
+
+    onSubmit(e) {
+        e.preventDefault();
+
+        const user ={
+            username:this.state.username,
+        }
+        console.log(user);
+        
+        this.setState({
+            username:''
+        })
+    }
+
+
+    render() {
+        return (
+            <div>
+                <h3>Create New User</h3>
+                <form onSubmit={this.onSubmit}>
+                    <div className="form-group">
+                        <label>Username : </label>
+                        <input type="text"
+                        required
+                        className="form-control"
+                        value={this.state.username}
+                        onChange={this.onChangeUsername}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <input type="submit" value="Create User" className="btn btn-primary"/>
+                    </div>
+                </form>
+            </div>
+        )
+    }
+}
+
+26. sampai disini kita akan menghubungkan frontend ke backend dengan library axios
+dan tambahkan   axios.post('http://localhost:5000/user/add',user)
+        .then(res=>console.log(res.data));
+pada button onSubmit
+
+27.this.props.match.params.id
+
+
+https://www.youtube.com/watch?v=vDQDFm3MvzI&list=PL9HDakgndgugeTY2kd6dgz4ZUOwXWXyC3
